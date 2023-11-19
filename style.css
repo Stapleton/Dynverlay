@@ -1,0 +1,40 @@
+@keyframes Breathing {
+    0% {background-color: #65351e
+    }
+    25% {background-color: #572e1b
+    }
+    50% {background-color: #3d2215
+    }
+    75% {background-color: #572e1b
+    }
+    100% {background-color: #65351e
+    }
+}
+
+#left {
+    position: absolute;
+    width: 1910px;
+    height: 170px;
+    bottom: 0;
+    left: 0;
+    border-radius: 4px 6px 4px 0;
+    border: #864623 10px ridge;
+    border-bottom-width: 0;
+    border-left-width: 0;
+}
+
+#right {
+    position: absolute;
+    width: 310px;
+    height: 1070px;
+    top: 0;
+    right: 0;
+    border-radius: 4px 0 6px 4px;
+    border: #864623 10px ridge;
+    border-top-width: 0;
+    border-right-width: 0;
+}
+
+.block {
+    animation: Breathing 20s infinite linear;
+}
