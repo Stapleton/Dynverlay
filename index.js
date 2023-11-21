@@ -19,9 +19,13 @@ function getTicker(SubType) {
 }
 
 function updateTicker(SubType, text) {
-    let oldText = getTicker(SubType).innerHTML;
     getTicker(SubType).innerHTML = text;
-    return oldText;
+}
+
+function bulkUpdateTickers() {
+    for (let ticker in ACTIVITY_LOGS) {
+        updateTicker(ticker, FormatText[ticker](ACTIVITY_LOGS[ticker]));
+    }
 }
 
 function getValuesFromArray(ArrayOfObjects, KeyName) {
@@ -48,23 +52,86 @@ function getKeysFromArray(ArrayOfObjects) {
     return results;
 }
 
-/************
- * Init TES *
- ************/
+function clearActivityLogs() {
+    for (let log in ACTIVITY_LOGS) {
+        ACTIVITY_LOGS[log] = [];
+    }
+}
+
+function setTestData() {
+    for (let log in TEST_DATA_ACTIVITY_LOGS) {
+        ACTIVITY_LOGS[log] = TEST_DATA_ACTIVITY_LOGS[log];
+    }
+}
+
+const FormatText = {
+    "channel.follow": (string) => {
+        return string.join(" | ");
+    },
+    "channel.subscribe": (string) => {
+        return string;
+    },
+    "channel.subscription.gift": (string) => {
+        return string;
+    },
+    "channel.subscription.message": (string) => {
+        return string;
+    },
+    "channel.cheer": (string) => {
+        return string;
+    },
+    "channel.raid": (string) => {
+        return string;
+    },
+}
+
+/******************
+ * Initialization *
+ ******************/
 
 const _TES = new TES({
-  identity: {
-      id: Config.TWITCH_CLIENT_ID,
-      accessToken: Config.TWITCH_AUTH_TOKEN(),
-  },
-  listener: {
-      type: "websocket",
-  }
+    identity: {
+        id: Config.TWITCH_CLIENT_ID,
+        accessToken: Config.TWITCH_AUTH_TOKEN(),
+    },
+        listener: {
+        type: "websocket",
+    }
 });
+
+let ActiveKeyboardListening = 0;
+addEventListener("keydown", (event) => {
+    if (event.isComposing || event.keyCode === 229 || ActiveKeyboardListening === 0) {
+        if (event.code === "Slash") { ActiveKeyboardListening = 1; console.log("listening to keyevents"); }
+        return;
+    }
+
+    console.log(event);
+
+    if (event.code === "Slash") { ActiveKeyboardListening = 0; console.log("ignoring keyevents"); }
+    if (event.code === "KeyR") {
+        clearActivityLogs();
+        bulkUpdateTickers();
+    }
+    if (event.code === "KeyT") {
+        setTestData();
+        bulkUpdateTickers();
+    }
+});
+
 
 /***********************
  * Data Drives the Bus *
  ***********************/
+
+const TEST_DATA_ACTIVITY_LOGS = {
+    "channel.follow": ["Stapleton", "alloybot", "only_cans", "spiteinc", "t__lk__t", "thisisareallylongusernameandithinkitmightbelongenoughforsomecssstyling"],
+    "channel.subscribe": ["Stapleton", "alloybot", "only_cans", "spiteinc", "t__lk__t", "thisisareallylongusernameandithinkitmightbelongenoughforsomecssstyling"],
+    "channel.subscription.gift": ["Stapleton", "alloybot", "only_cans", "spiteinc", "t__lk__t", "thisisareallylongusernameandithinkitmightbelongenoughforsomecssstyling"],
+    "channel.subscription.message": ["Stapleton", "alloybot", "only_cans", "spiteinc", "t__lk__t", "thisisareallylongusernameandithinkitmightbelongenoughforsomecssstyling"],
+    "channel.cheer": ["Stapleton", "alloybot", "only_cans", "spiteinc", "t__lk__t", "thisisareallylongusernameandithinkitmightbelongenoughforsomecssstyling"],
+    "channel.raid": ["Stapleton", "alloybot", "only_cans", "spiteinc", "t__lk__t", "thisisareallylongusernameandithinkitmightbelongenoughforsomecssstyling"]
+}
 
 const ACTIVITY_LOGS = {
     "channel.follow": [],
@@ -76,12 +143,13 @@ const ACTIVITY_LOGS = {
 }
 
 const SUBSCRIPTIONS_AND_CONDITIONS = {
-    "channel.follow": { "broadcaster_user_id": Config.CASTER_USER_ID, "moderator_user_id": Config.CASTER_USER_ID },
-    "channel.subscribe": { "broadcaster_user_id": Config.CASTER_USER_ID },
-    "channel.subscription.gift": { "broadcaster_user_id": Config.CASTER_USER_ID },
-    "channel.subscription.message": { "broadcaster_user_id": Config.CASTER_USER_ID },
-    "channel.cheer": { "broadcaster_user_id": Config.CASTER_USER_ID },
-    "channel.raid": { "to_broadcaster_user_id": Config.CASTER_USER_ID }
+    // SubscriptionName: [ {condition}, versionNumber ]
+    "channel.follow": [{ "broadcaster_user_id": Config.CASTER_USER_ID, "moderator_user_id": Config.CASTER_USER_ID }, 2],/*
+    "channel.subscribe": [{ "broadcaster_user_id": Config.CASTER_USER_ID }, 1],
+    "channel.subscription.gift": [{ "broadcaster_user_id": Config.CASTER_USER_ID }, 1],
+    "channel.subscription.message": [{ "broadcaster_user_id": Config.CASTER_USER_ID }, 1],
+    "channel.cheer": [{ "broadcaster_user_id": Config.CASTER_USER_ID }, 1],
+    "channel.raid": [{ "to_broadcaster_user_id": Config.CASTER_USER_ID }, 1]*/
 };
 
 const EVENTTYPES_AND_HANDLERS = {
@@ -105,7 +173,7 @@ const EVENTTYPES_AND_HANDLERS = {
         }
         ACTIVITY_LOGS[subscription.type].unshift(clean);
 
-        let txt = getValuesFromArray(ACTIVITY_LOGS[subscription.type], subscription.type).join(" | ");
+        let txt = FormatText[subscription.type](getValuesFromArray(ACTIVITY_LOGS[subscription.type], subscription.type));
 
         updateTicker(subscription.type, txt);
     },
@@ -170,16 +238,17 @@ function RegisterSubscriptions(SubsAndConditions) {
     let Subs = [];
 
     for (let SubscriptionName in SubsAndConditions) {
-        let a = {
-            Sub: _TES.subscribe(SubscriptionName, SubsAndConditions[SubscriptionName]),
+        let a = { cond: SubsAndConditions[SubscriptionName][0], version: SubsAndConditions[SubscriptionName][1] }
+        let b = {
+            Sub: _TES.subscribe(SubscriptionName, a.cond, a.version),
             Resolve: (value) => {
                 console.log(`Created subscription to ${value.type}, subscription id ${value.id}`);
             },
             Reject: (err) => {
-                console.error(`Failed to create Subscription. ${err}`);
+                console.error(`Failed to create Subscription: ${SubscriptionName}\n\n${err}`);
             }
         }
-        Subs.push(a.Sub.then(a.Resolve).catch(a.Reject));
+        Subs.push(b.Sub);
     }
 
     return Subs;
@@ -192,7 +261,9 @@ function RegisterEventHandlers(SettledPromises) {
             console.log(`Failed to register Event Handler for ${p.value.type}\nPromise Failure Reason: ${p.value.reason}`);
             continue;
         }
+        console.log(p);
         _TES.on(p.value.type, EVENTTYPES_AND_HANDLERS[p.value.type]);
+        updateTicker(p.value.type, ACTIVITY_LOGS[p.value.type].join(" | "));
     }
 }
 
