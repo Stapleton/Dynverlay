@@ -4,17 +4,39 @@
         <meta charset="UTF-8">
         <title>Overlay by Stapleton</title>
         <link rel="stylesheet" href="style.css"/>
-        <script src="index.js"></script>
+        <script
+                src="https://cdn.jsdelivr.net/gh/mitchwadair/tesjs@v1.0.3/dist/tes.min.js"></script>
+        <script src="index.js" type="module" defer async></script>
     </head>
     <body>
         <div id="main_container">
             <div class="outline">
 
             </div>
-            <div id="left" class="block">
-                <h1>Activity List</h1>
+            <div id="ActivityTicker" class="block">
+                <h1 id="TickerHeader">Activity</h1>
+                <div id="TickerContainer">
+                    <div id="channel.follow">
+
+                    </div>
+                    <div id="channel.subscribe">
+
+                    </div>
+                    <div id="channel.subscription.gift">
+
+                    </div>
+                    <div id="channel.subscription.message">
+
+                    </div>
+                    <div id="channel.cheer">
+
+                    </div>
+                    <div id="channel.raid">
+
+                    </div>
+                </div>
             </div>
-            <div id="right" class="block">
+            <div id="ChatBox" class="block">
                 <h1>Chat :)</h1>
             </div>
         </div>

@@ -11,7 +11,7 @@
     }
 }
 
-#left {
+#ActivityTicker {
     position: absolute;
     width: 1910px;
     height: 170px;
@@ -23,7 +23,7 @@
     border-left-width: 0;
 }
 
-#right {
+#ChatBox {
     position: absolute;
     width: 310px;
     height: 1070px;
